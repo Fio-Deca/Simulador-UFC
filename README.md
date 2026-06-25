@@ -6,7 +6,7 @@ Este proyecto forma parte de mi Trabajo de Fin de Máster (TFM) y busca eliminar
 
 ## ✨ Características Principales
 
-* 📓 **Investigación y Modelado (Jupyter Notebook):** En la carpeta `/notebooks` se incluye el código fuente original de la investigación. Aquí se detalla todo el proceso de *Data Wrangling*, *Feature Engineering* (creación de variables diferenciales y Ape Index) y el entrenamiento de los algoritmos.
+* 📓 **Investigación y Modelado (Jupyter Notebook):** En la carpeta `/Notebooks` se incluye el código fuente original de la investigación. Aquí se detalla todo el proceso de *Data Wrangling*, *Feature Engineering* (creación de variables diferenciales y Ape Index) y el entrenamiento de los algoritmos.
 * 🎮 **Simulador de Combates Reactivo:** Motor de predicción impulsado por un modelo de **Regresión Logística**. Durante la fase de investigación, se realizó una comparativa exhaustiva con distintos algoritmos de *Machine Learning*, decantándose finalmente por la Regresión Logística debido a su alta fiabilidad y excelente explicabilidad para calcular probabilidades reales de victoria.
 * 📊 **Análisis Exploratorio de Datos (EDA) Dinámico:** Visualización interactiva con Plotly que muestra las tasas de finalización (KO, Sumisión, Decisión) segmentadas por categoría de peso oficial de la UFC.
 * 🧬 **Perfilado de Estilos de Pelea (PCA + K-Means):** Aplicación de aprendizaje no supervisado. El algoritmo K-Means, justificado matemáticamente mediante el Coeficiente de Silueta (k=2), separa a los atletas en *Strikers* y *Grapplers* basándose puramente en su volumen de golpes y derribos, reduciendo la dimensionalidad previamente mediante PCA.
@@ -22,4 +22,14 @@ Este proyecto forma parte de mi Trabajo de Fin de Máster (TFM) y busca eliminar
 
 1. Clona este repositorio:
    ```bash
-   git clone [https://github.com/Fio-Deca/Predicci-n-de-peleas-UFC](https://github.com/Fio-Deca/Predicci-n-de-peleas-UFC.git)
+   git clone https://github.com/Fio-Deca/Simulador-UFC
+2. Instala las dependencias y librerías necesarias:
+   ```bash
+   pip install -r requirements.txt
+3. Inicia el servidor de la aplicación web:
+   ```bash
+   streamlit run app.py
+
+## :globe_with_meridians: Página Web
+   Demo en vivo: Para probar la aplicación directamente sin necesidad de instalar o ejecutar código localmente,    puedes acceder al simulador web en el siguiente enlace:
+   https://simulador-ufc.streamlit.app/
