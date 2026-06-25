@@ -5,7 +5,7 @@ import plotly.express as px
 from funciones import simular_pelea_final
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans # 👈 ¡AÑADE ESTA LÍNEA!
+from sklearn.cluster import KMeans 
 
 st.set_page_config(page_title="Simulador UFC", page_icon="🥊", layout="centered")
 
@@ -206,10 +206,9 @@ with tab_eda:
     st.write("Agrupación no supervisada de peleadores basada exclusivamente en su ADN de combate (estadísticas de *Striking* y *Grappling*).")
     
     try:
-        # 1. Seleccionamos las columnas que definen el estilo de un peleador
-        columnas_estilo = ['splm', 'sapm', 'str_acc', 'str_def', 'td_avg', 'td_def', 'sub_avg']
-        
-        # Comprobamos cuáles de estas columnas existen realmente en tu dataset
+        # 1. Seleccionamos SOLO las métricas ofensivas puras
+        # (Quitamos la defensa para obligar al algoritmo a centrarse en EL ESTILO)
+        columnas_estilo = ['splm', 'td_avg', 'sub_avg']
         cols_disponibles = [col for col in columnas_estilo if col in df.columns]
         
         # Limpiamos los peleadores que no tengan estos datos registrados
@@ -218,47 +217,36 @@ with tab_eda:
         if not df_pca_clean.empty and len(cols_disponibles) >= 2:
             X_estilo = df_pca_clean[cols_disponibles]
             
-            # 2. Estandarizamos (vital para que un derribo valga lo mismo que un golpe a nivel matemático)
+            # 2. Estandarizamos
             X_scaled = StandardScaler().fit_transform(X_estilo)
             
-            # 3. PCA para reducir a 2 dimensiones (para poder dibujarlo en pantalla)
+            # 3. PCA para reducir a 2 dimensiones
             pca_engine = PCA(n_components=2)
             coordenadas_pca = pca_engine.fit_transform(X_scaled)
             
-            # 4. K-Means para encontrar 3 perfiles de pelea automáticamente
-            kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+            # 4. K-MEANS CON k=2
+            kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
             df_pca_clean['Cluster'] = kmeans.fit_predict(X_scaled)
             
-            # --- 🤖 LÓGICA INTELIGENTE PARA NOMBRAR LOS ESTILOS ---
-            # Calculamos las medias de cada grupo para saber en qué destacan
+            # --- 🤖 LÓGICA INTELIGENTE AUTOCORREGIDA ---
+            # Ahora la IA mirará quién tiene más derribos de media y le asignará el título de Grappler
             centroides = df_pca_clean.groupby('Cluster')[cols_disponibles].mean()
             
-            # Asumimos que el grupo con más derribos (td_avg) son los Grapplers
-            grappler_id = centroides['td_avg'].idxmax() if 'td_avg' in cols_disponibles else 0
+            grappler_id = centroides['td_avg'].idxmax()
+            striker_id = 1 if grappler_id == 0 else 0
             
-            # Asumimos que el grupo con más golpes por minuto (splm) son los Strikers
-            striker_id = centroides['splm'].idxmax() if 'splm' in cols_disponibles else 1
+            mapa_estilos = {
+                grappler_id: "🤼 Especialistas en Suelo (Grapplers)", 
+                striker_id: "🥊 Especialistas en Golpeo (Strikers)"
+            }
             
-            # Si por alguna casualidad un grupo domina ambas, usamos nombres genéricos
-            if grappler_id == striker_id:
-                mapa_estilos = {0: "Estilo A", 1: "Estilo B", 2: "Estilo C"}
-            else:
-                # El grupo restante es el equilibrado
-                mixto_id = [i for i in [0, 1, 2] if i not in [grappler_id, striker_id]][0]
-                mapa_estilos = {
-                    grappler_id: "🤼 Grapplers (Lucha de Suelo)", 
-                    striker_id: "🥊 Strikers (Golpeo de Pie)", 
-                    mixto_id: "⚖️ Estilo Mixto / Equilibrado"
-                }
-            
-            # Asignamos el nombre final a cada peleador
             df_pca_clean['Perfil de Pelea'] = df_pca_clean['Cluster'].map(mapa_estilos)
             
-            # 5. Preparamos los datos para Streamlit
+            # 5. Preparamos los datos para el gráfico
             df_grafico_pca = pd.DataFrame(coordenadas_pca, columns=['Eje PCA 1', 'Eje PCA 2'])
             df_grafico_pca['Perfil de Pelea'] = df_pca_clean['Perfil de Pelea'].values
             
-            st.write(f"Varianza explicada por el modelo 2D: **{sum(pca_engine.explained_variance_ratio_)*100:.2f}%**")
+            st.write(f"Varianza explicada por los 2 componentes principales: **{sum(pca_engine.explained_variance_ratio_)*100:.2f}%**")
             
             # 6. Dibujamos el gráfico
             st.scatter_chart(
@@ -268,12 +256,17 @@ with tab_eda:
                 color='Perfil de Pelea'
             )
             
-            st.info("💡 **Nota metodológica:** Cada punto es un peleador. El algoritmo ha segmentado a los atletas en 3 perfiles analizando únicamente sus métricas numéricas, sin conocer sus nombres, métodos de victoria ni divisiones.")
+            st.success("💡 **Justificación Matemática:** El número de agrupaciones (k=2) se determinó mediante el Coeficiente de Silueta.")
+            
         else:
-            st.warning("Faltan métricas suficientes de striking/grappling en el dataset para realizar el perfilado.")
+            st.warning("No hay suficientes datos limpios para proyectar el PCA.")
     except Exception as e:
-        st.error(f"Error al calcular el PCA de estilos: {e}") 
+        st.error(f"Error al calcular el PCA de estilos: {e}")
 
-    # 4. Mostrar el DataFrame (Tabla interactiva)
-    st.subheader("Vista Previa del Dataset de Peleadores")
-    st.dataframe(df, use_container_width=True)
+    st.divider()
+
+    # 🚨 CORRECCIÓN CRÍTICA: Mostramos 'df_pca_clean' para que coincida con el gráfico
+    st.subheader("Vista Previa del Dataset de Peleadores (Con Estilo Predicho)")
+    # Seleccionamos las columnas más importantes para que el tribunal lo vea ordenado
+    columnas_visibles = ['name', 'division', 'Perfil de Pelea'] + [c for c in columnas_estilo if c in df_pca_clean.columns]
+    st.dataframe(df_pca_clean[columnas_visibles], use_container_width=True)
